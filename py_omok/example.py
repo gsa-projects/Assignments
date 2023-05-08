@@ -5,10 +5,10 @@ from pygame.locals import *
 from copy import copy
 
 class Board:
-    def __init__(self, w=15, h=15):
-        self.width = w
-        self.height = h
-        self.stones: list[list[Surface | None]] = [[None for _ in range(w)] for _ in range(h)]
+    def __init__(self):
+        self.width = 15
+        self.height = 15
+        self.stones: list[list[Surface | None]] = [[None for _ in range(self.width)] for _ in range(self.height)]
 
     def __getitem__(self, pos: tuple[int, int]):
         return self.stones[pos[0]][pos[1]]
@@ -22,6 +22,11 @@ class Board:
 
     def empty(self, x: int, y: int):
         return self[x, y] is None
+
+    def iterate(self, func):
+        for i in range(self.width):
+            for j in range(self.height):
+                func(i, j)
 
 class Omok:
     def __init__(self, board: Board):
@@ -37,6 +42,7 @@ def main(mouse_pos, board: Board):
         if evt.type == QUIT:
             quit()
             sys.exit()
+
         elif evt.type == MOUSEBUTTONDOWN:
             set_x, set_y = nth(mouse_x), nth(mouse_y)
 
@@ -51,16 +57,17 @@ def main(mouse_pos, board: Board):
 
     screen.blit(board_image, (0, 0))
 
-    for i in range(15):
-        for j in range(15):
-            if not board.empty(i, j):
-                screen.blit(board[i, j], (20 + 40 * i - 15, 20 + 40 * j - 15))
+    board.iterate(lambda i, j:
+        screen.blit(board[i, j], (20 + 40 * i - 15, 20 + 40 * j - 15))
+        if not board.empty(i, j) else None
+    )
 
     white_stone.set_alpha(128)
     screen.blit(white_stone, (20 + 40 * nth(mouse_x) - 15, 20 + 40 * nth(mouse_y) - 15))
 
 def best_pos(board: Board):
-    # TODO - implement AI   
+    # TODO - implement AI
+
     for i in range(15):
         for j in range(15):
             if board.empty(i, j):
@@ -78,7 +85,7 @@ if __name__ == "__main__":
     white_stone = image.load(path.join(assets, 'white_stone.png'))  # (30, 30)
     black_stone = image.load(path.join(assets, 'black_stone.png'))  # (30, 30)
 
-    board = Board(w=15, h=15)
+    board = Board()
     while True:
         main(mouse.get_pos(), board)
         display.update()
