@@ -3,40 +3,14 @@ from os import path
 from pygame import *
 from pygame.locals import *
 from copy import copy
+from base import *
 
-class Board:
-    def __init__(self):
-        self.width = 15
-        self.height = 15
-        self.stones: list[list[Surface | None]] = [[None for _ in range(self.width)] for _ in range(self.height)]
-
-    def __getitem__(self, pos: tuple[int, int]):
-        return self.stones[pos[0]][pos[1]]
-
-    def __setitem__(self, pos: tuple[int, int], value: Surface):
-        if self.empty(*pos):
-            self.stones[pos[0]][pos[1]] = value
-            return True
-        else:
-            return False
-
-    def empty(self, x: int, y: int):
-        return self[x, y] is None
-
-    def iterate(self, func):
-        for i in range(self.width):
-            for j in range(self.height):
-                func(i, j)
-
-class Omok:
-    def __init__(self, board: Board):
-        self.board = board
-
-def main(mouse_pos, board: Board):
+def main(mouse_pos, omok: Omok):
     mouse_x, mouse_y = mouse_pos
 
     def nth(pos: int) -> int:
-        return round((pos - 20) / 40)
+        pos = min(max(pos, 11), 610)
+        return round((pos - 30) / 40)
 
     for evt in event.get():
         if evt.type == QUIT:
@@ -46,24 +20,47 @@ def main(mouse_pos, board: Board):
         elif evt.type == MOUSEBUTTONDOWN:
             set_x, set_y = nth(mouse_x), nth(mouse_y)
 
-            if board.empty(set_x, set_y):
-                stamp_white_stone = copy(white_stone)
-                stamp_white_stone.set_alpha(255)
-                board[set_x, set_y] = stamp_white_stone
+            if omok.board.empty(set_x, set_y):
+                stamp = copy(user_stone)
+                stamp.set_alpha(255)
+
+                counts = omok.check_8dir((set_x, set_y), user_stone)
+                if not any(count >= 6 for count in counts.values()):
+                    omok.board[set_x, set_y] = stamp
+
+                    if any(count == 5 for count in counts.values()):
+                        print("User win")
+                        quit()
+                        sys.exit()
+                else:
+                    print('장목!!!')
+
+                counts = omok.check_8dir((set_x, set_y), user_stone)
+                if line:
+                    print("User win")
+                    quit()
+                    sys.exit()
             else:
                 continue
 
-            board[best_pos(board)] = copy(black_stone)
+            omok.board[best_pos(omok.board)] = copy(bot_stone)
+            counts = omok.check_8dir((set_x, set_y), user_stone)
+            if any(count >= 5 for count in counts.values()):
+                print("Bot win")
+                quit()
+                sys.exit()
 
     screen.blit(board_image, (0, 0))
 
-    board.iterate(lambda i, j:
-        screen.blit(board[i, j], (20 + 40 * i - 15, 20 + 40 * j - 15))
-        if not board.empty(i, j) else None
+    omok.board.iterate(lambda i, j:
+        screen.blit(omok.board[i, j],
+                  (30 + 40 * i - user_stone.get_size()[0] / 2, 30 + 40 * j - user_stone.get_size()[0] / 2))
+        if not omok.board.empty(i, j) else None
     )
 
-    white_stone.set_alpha(128)
-    screen.blit(white_stone, (20 + 40 * nth(mouse_x) - 15, 20 + 40 * nth(mouse_y) - 15))
+    user_stone.set_alpha(128)
+    screen.blit(user_stone, (
+    30 + 40 * nth(mouse_x) - user_stone.get_size()[0] / 2, 30 + 40 * nth(mouse_y) - user_stone.get_size()[0] / 2))
 
 def best_pos(board: Board):
     # TODO - implement AI
@@ -73,20 +70,24 @@ def best_pos(board: Board):
             if board.empty(i, j):
                 return i, j
 
+
 if __name__ == "__main__":
     init()
+    assets = path.join(path.dirname(__file__), "assets")
+    board_image = image.load(path.join(assets, 'board.png'))  # (621, 621), (30, 30), step 40
+    white_stone = image.load(path.join(assets, 'white_stone.png'))
+    black_stone = image.load(path.join(assets, 'black_stone.png'))
+    user_stone, bot_stone = black_stone, white_stone
+
     display.set_caption("Omok")
-    screen = display.set_mode((601, 601))
+    screen = display.set_mode(board_image.get_size())
     clock = time.Clock()
     fps = 30
 
-    assets = path.join(path.dirname(__file__), "assets")
-    board_image = image.load(path.join(assets, 'board.png'))  # (601, 601), (20, 20), step 40
-    white_stone = image.load(path.join(assets, 'white_stone.png'))  # (30, 30)
-    black_stone = image.load(path.join(assets, 'black_stone.png'))  # (30, 30)
+    RIGHT, DOWN, RIGHT_DOWN, RIGHT_UP = (1, 0), (0, 1), (1, 1), (1, -1)
 
-    board = Board()
+    omok = Omok(Board())
     while True:
-        main(mouse.get_pos(), board)
+        main(mouse.get_pos(), omok)
         display.update()
         clock.tick(fps)
