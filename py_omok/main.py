@@ -6,13 +6,13 @@ from base import *
 
 def on_click(mouse_pos, board: Board):
     # 유저 착수
-    placement_pos = tuple(map(board.nth, mouse_pos))
+    placement_pos = board.from_pixel(mouse_pos)
     if not board.empty(placement_pos): return
 
     counts = board.get_counts(placement_pos, user_stone)
 
     # NOTE
-    print(counts)
+    print(f'{{ -: {counts[RIGHT]}, |: {counts[DOWN]}, \\: {counts[RIGHT_DOWN]}, /: {counts[RIGHT_UP]} }}')
 
     if all(count <= 5 for count in counts.values()):
         board.placement(placement_pos, user_stone)
@@ -26,10 +26,8 @@ def on_click(mouse_pos, board: Board):
 
     # 봇 착수
     placement_pos = board.best_pos()
-    board.placement(placement_pos, bot_stone)
 
-    # NOTE
-    print(placement_pos)
+    board.placement(placement_pos, bot_stone)
 
     counts = board.get_counts(placement_pos, bot_stone)
     if any(count == 5 for count in counts.values()):
@@ -46,25 +44,25 @@ def main(mouse_pos, board: Board):
         elif evt.type == MOUSEBUTTONDOWN:
             on_click(mouse_pos, board)
 
-    screen.blit(board_image.image, (0, 0))
+    screen.blit(board_background.image, (0, 0))
     for i in range(15):
         for j in range(15):
-            if not board.empty((i, j)):
-                screen.blit(board[i, j].image, tuple(map(board.to_pos, (i, j))))
-    screen.blit(user_stone.image, tuple(map(board.nth_to_pos, mouse_pos)))
+            if not board.empty(BoardPos(i, j)):
+                screen.blit(board[BoardPos(i, j)].image, board.to_pixel(BoardPos(i, j)))
+    screen.blit(user_stone.image, board.to_pixel(board.from_pixel(mouse_pos).fit_in()))
 
 if __name__ == "__main__":
     init()
     assets = path.join(path.dirname(__file__), "assets")
-    white_stone = Image(path.join(assets, 'white_stone.png'))
-    black_stone = Image(path.join(assets, 'black_stone.png'))
+    white_stone = Asset(path.join(assets, 'white_stone.png'))
+    black_stone = Asset(path.join(assets, 'black_stone.png'))
     bot_stone, user_stone = white_stone, black_stone
 
-    board_image = Image(path.join(assets, 'board.png'))
+    board_background = Asset(path.join(assets, 'board.png'))
     board = Board(startpx=(30, 30), endpx=(590, 590), steppx=40, stone_size=user_stone.get_width())
 
     display.set_caption("Omok")
-    screen = display.set_mode(board_image.get_size())
+    screen = display.set_mode(board_background.get_size())
     clock = time.Clock()
     fps = 30
 
