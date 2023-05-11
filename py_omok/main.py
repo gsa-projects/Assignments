@@ -23,6 +23,7 @@ def on_click(mouse_pos, board: Board):
             sys.exit()
     else:
         print('장목이라 착수 안 됨')
+        return
 
     # 봇 착수
     placement_pos = board.best_pos()
