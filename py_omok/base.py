@@ -100,7 +100,7 @@ class Board:
 
         if get_pos:
             count = []
-            if to_bot:
+            if not to_bot:
                 count.append(pos)
         else:
             count = 0 if to_bot else 1

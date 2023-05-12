@@ -22,14 +22,12 @@ def main(mouse_pos, board: Board):
 
             counts = board.get_counts(placement_pos, user_stone)
 
-            # print(f'{{ -: {counts[RIGHT]}, |: {counts[DOWN]}, \\: {counts[RIGHT_DOWN]}, /: {counts[RIGHT_UP]} }}')
-
             if all(count <= 5 for count in counts.values()):
                 board.placement(placement_pos, user_stone)
 
                 for diff, count in counts.items():
-                    if count == 5:
-                        stat, indices = 'lose', board.get_counts_each(placement_pos, BoardPos(*diff), user_stone, get_pos=True)
+                    if count >= 5:
+                        stat, indices = 'win', board.get_counts_each(placement_pos, BoardPos(*diff), user_stone, get_pos=True)
             else:
                 stat, indices = 'no', None
                 continue
@@ -41,10 +39,8 @@ def main(mouse_pos, board: Board):
             counts = board.get_counts(placement_pos, bot_stone)
 
             for diff, count in counts.items():
-                if count == 5:
+                if count >= 5:
                     stat, indices = 'lose', board.get_counts_each(placement_pos, BoardPos(*diff), bot_stone, get_pos=True)
-
-            stat, indices = 'nothing', None
 
     screen.blit(board_background.image, (0, 0))
     for i in range(15):
@@ -54,10 +50,9 @@ def main(mouse_pos, board: Board):
 
     pre_pos = board.from_pixel(mouse.get_pos()).fit_in()
     counts = board.get_counts(pre_pos, user_stone)
-    is_long = board.empty(pre_pos) and any(count >= 5 for count in counts.values())
-    
+    is_long = board.empty(pre_pos) and any(count >= 6 for count in counts.values())
     screen.blit(no.image if is_long else user_stone.image, board.to_pixel(pre_pos))
-    
+
     return stat, indices, board
 
 if __name__ == "__main__":
@@ -87,10 +82,16 @@ if __name__ == "__main__":
         stat, indices, board = main(mouse.get_pos(), board)
 
         if indices is not None:
-            for index in indices:
-                screen.blit(win.image if stat == 'win' else lose.image, board.to_pixel(index))
+            line = copy(win if stat == 'win' else lose)
 
-            break
+            for index in indices:
+                screen.blit(line.image, board.to_pixel(index))
 
         display.update()
+
+        if stat == 'win' or stat == 'lose':
+            sleep(5)
+            quit()
+            sys.exit()
+
         clock.tick(fps)
