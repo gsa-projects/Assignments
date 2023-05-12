@@ -2,8 +2,8 @@ from pygame import Surface
 from copy import copy
 from dataclasses import dataclass
 import pygame
-import sys
 import torch
+from time import sleep
 
 class Asset:
     def __init__(self, path):
@@ -52,6 +52,9 @@ class BoardPos:
     def __sub__(self, other):
         return BoardPos(self.row - other.row, self.col - other.col)
     
+    def __str__(self):
+        return f'<{self.row}, {self.col}>'
+    
     @property
     def isin(self):
         return 0 <= self.row < 15 and 0 <= self.col < 15
@@ -85,27 +88,36 @@ class Board:
     def empty(self, pos: BoardPos):
         return self.stones[pos.row][pos.col] is None
 
-    # FIXME - 다 틀림
-    def get_counts(self, pos: BoardPos, stone: Asset) -> dict[tuple, int]:
+    def get_counts(self, pos: BoardPos, user: Asset, bot: Asset | None = None, get_pos=False) -> dict[tuple[int, int], int]:
         counts = {}
         for factor in ((1, 0), (0, 1), (1, 1), (1, -1)):
-            counts[factor] = self.get_counts_each(pos, factor, stone)
+            counts[factor] = self.get_counts_each(pos, BoardPos(*factor), user, bot, get_pos)
 
         return counts
 
-    # FIXME - 다 틀림
-    def get_counts_each(self, pos: BoardPos, factor: tuple[int, int], stone: Asset) -> int:
-        diff = BoardPos(*factor)
-        count = 1
+    def get_counts_each(self, pos: BoardPos, diff: BoardPos, user: Asset, bot: Asset | None = None, get_pos=False) -> int | list[BoardPos]:
+        to_bot = bot is not None
+
+        if get_pos:
+            count = []
+            if to_bot:
+                count.append(pos)
+        else:
+            count = 0 if to_bot else 1
 
         tmp = pos
         while True:
             tmp += diff
 
-            if not tmp.isin:
-                break
-            if self[tmp] == stone:
-                count += 1
+            if not tmp.isin: break
+
+            if self[tmp] == user:
+                if get_pos:
+                    count.append(tmp)
+                else:
+                    count += 1  
+            # elif to_bot and self[tmp] == bot:
+            #     count = 0
             else:
                 break
 
@@ -113,10 +125,15 @@ class Board:
         while True:
             tmp -= diff
 
-            if not tmp.isin:
-                break
-            if self[tmp] == stone:
-                count += 1
+            if not tmp.isin: break
+
+            if self[tmp] == user:
+                if get_pos:
+                    count.append(tmp)
+                else:
+                    count += 1  
+            # elif to_bot and self[tmp] == bot:
+            #     count = 0
             else:
                 break
 
@@ -127,7 +144,7 @@ class Board:
         stamp.set_alpha(255)
         self[pos] = stamp
 
-    def best_pos(self, user: Asset) -> BoardPos:
+    def best_pos(self, user: Asset, bot: Asset) -> BoardPos:
         input_data = torch.zeros((15, 15))
         for row in range(15):
             for col in range(15):
@@ -135,15 +152,49 @@ class Board:
                     input_data[row, col] = float(self.__getitem__(BoardPos(row, col), also_no=True).no)
 
         model = torch.load('C:/Users/rhseung/Coding/Repositories/gsa-projects/Assignments/py_omok/models/model.pt')
-
         output = model(input_data.reshape((1, 15, 15)))[0]
 
-        idx = None
+        idxs = []
+        counts_s = [[{} for _ in range(15)] for _ in range(15)]
+        is_4 = False
+
         for row in range(15):
             for col in range(15):
                 if self.empty(BoardPos(row, col)):
-                    if idx is None or output[idx.row, idx.col].item() < output[row, col].item():
-                        idx = BoardPos(row, col)
+                    tmp = BoardPos(row, col)
+
+                    counts_s[row][col] = self.get_counts(tmp, user=user, bot=bot)
+                    counts = counts_s[row][col]
+                    values = counts.values()
+
+                    if all(count < 5 for count in values):
+                        if any(count == 4 for count in values):
+                            is_4 = True
+
+                        for diff, count in counts.items():
+                            if count == (4 if is_4 else 3):                                
+                                if not is_4:
+                                    forward = tmp + BoardPos(*diff)
+                                    backward = tmp - BoardPos(*diff)
+
+                                    if not ((not forward.isin) or self[forward] == user) or ((not backward.isin) or self[backward] == user): # 벽이거나, 유저 돌이라서 막혀 있다면 -> 한 쪽이 막혀있는 3목
+                                        idxs.append(tmp)
+                                else:
+                                    idxs.append(tmp)
+
+        if len(idxs) == 0:
+            for row in range(15):
+                for col in range(15):
+                    if self.empty(BoardPos(row, col)):
+                        counts = counts_s[row][col]
+                        if any(count >= 6 for count in counts.values()):
+                            continue
+                        idxs.append(BoardPos(row, col))
+
+        idx = idxs[0]
+        for pos in idxs:
+            if output[idx.row, idx.col].item() < output[pos.row, pos.col].item():
+                idx = pos
 
         return idx
     
