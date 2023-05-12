@@ -28,6 +28,9 @@ def on_click(mouse_pos, board: Board):
     # 봇 착수
     placement_pos = board.best_pos()
 
+    # FIXME
+    print(placement_pos)
+
     board.placement(placement_pos, bot_stone)
 
     counts = board.get_counts(placement_pos, bot_stone)

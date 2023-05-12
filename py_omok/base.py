@@ -3,6 +3,7 @@ from copy import copy
 from dataclasses import dataclass
 import pygame
 import sys
+import torch
 
 class Asset:
     def __init__(self, path):
@@ -127,15 +128,24 @@ class Board:
         self[pos] = stamp
 
     def best_pos(self) -> BoardPos:
-        # TODO - implement AI
+        input_data = torch.zeros((15, 15))
+        for row in range(15):
+            for col in range(15):
+                if not self.empty(BoardPos(row, col)):
+                    input_data[row, col] = float(self.__getitem__(BoardPos(row, col), also_no=True).no)
 
-        for i in range(15):
-            for j in range(15):
-                if self.empty(BoardPos(i, j)):
-                    return BoardPos(i, j)
-                
-        sys.exit()
-        quit()
+        model = torch.load('model.pt')
+        output = model(input_data.reshape((1, 15, 15)))[0]
+
+        for row in range(15):
+            for col in range(15):
+                print(round(output[row, col].item(), 1), end=' ')
+            print()
+
+        for row in range(15):
+            for col in range(15):
+                if round(output[row, col].item()) == self.count + 1:
+                    return BoardPos(row, col)
     
     def from_pixel(self, pixel: tuple[int, int]) -> BoardPos:
         from_ = lambda pos: round((pos - self.start[0]) / self.step)
