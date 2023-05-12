@@ -12,7 +12,7 @@ def on_click(mouse_pos, board: Board):
     counts = board.get_counts(placement_pos, user_stone)
 
     # NOTE
-    print(f'{{ -: {counts[RIGHT]}, |: {counts[DOWN]}, \\: {counts[RIGHT_DOWN]}, /: {counts[RIGHT_UP]} }}')
+    # print(f'{{ -: {counts[RIGHT]}, |: {counts[DOWN]}, \\: {counts[RIGHT_DOWN]}, /: {counts[RIGHT_UP]} }}')
 
     if all(count <= 5 for count in counts.values()):
         board.placement(placement_pos, user_stone)
@@ -25,12 +25,8 @@ def on_click(mouse_pos, board: Board):
         print('장목이라 착수 안 됨')
         return
 
-    # 봇 착수
-    placement_pos = board.best_pos()
-
-    # FIXME
-    print(placement_pos)
-
+    # 봇 착수   
+    placement_pos = board.best_pos(user=user_stone)
     board.placement(placement_pos, bot_stone)
 
     counts = board.get_counts(placement_pos, bot_stone)

@@ -127,25 +127,25 @@ class Board:
         stamp.set_alpha(255)
         self[pos] = stamp
 
-    def best_pos(self) -> BoardPos:
+    def best_pos(self, user: Asset) -> BoardPos:
         input_data = torch.zeros((15, 15))
         for row in range(15):
             for col in range(15):
                 if not self.empty(BoardPos(row, col)):
                     input_data[row, col] = float(self.__getitem__(BoardPos(row, col), also_no=True).no)
 
-        model = torch.load('model.pt')
+        model = torch.load('C:/Users/rhseung/Coding/Repositories/gsa-projects/Assignments/py_omok/models/model.pt')
+
         output = model(input_data.reshape((1, 15, 15)))[0]
 
+        idx = None
         for row in range(15):
             for col in range(15):
-                print(round(output[row, col].item(), 1), end=' ')
-            print()
+                if self.empty(BoardPos(row, col)):
+                    if idx is None or output[idx.row, idx.col].item() < output[row, col].item():
+                        idx = BoardPos(row, col)
 
-        for row in range(15):
-            for col in range(15):
-                if round(output[row, col].item()) == self.count + 1:
-                    return BoardPos(row, col)
+        return idx
     
     def from_pixel(self, pixel: tuple[int, int]) -> BoardPos:
         from_ = lambda pos: round((pos - self.start[0]) / self.step)
