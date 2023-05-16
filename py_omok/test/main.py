@@ -1,5 +1,5 @@
 from os import path
-from pygame import *
+from pygame import * 
 from pygame.locals import *
 from base import *
 from time import sleep
