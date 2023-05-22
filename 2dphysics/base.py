@@ -3,12 +3,12 @@ from pygame import *
 from os import path
 from math import *
 
-HEIGHT = 700
-WIDTH = 1200
+HEIGHT = 600
+WIDTH = 1000
 ASSETS = path.join(path.dirname(__file__), "assets")
 a = 0.5
 g = 0.6
-f = -0.12
+f = -0.08
 e = 1
 PLATFORM_HEIGHT = 40
 
@@ -31,7 +31,7 @@ class MassPoint(sprite.Sprite):
         self.radius = (round(log2(mass) + 1) * 13) // 4
         self.font = font.Font(path.join(ASSETS, "font.ttf"), 15 + int(log2(self.mass) / 6))
         self.text = self.font.render(str(self.mass), True, (255, 255, 255))
-        self.rect = self.text.get_rect()
+        self.rect = Rect(pos_x - self.radius, pos_y - self.radius, self.radius * 2, self.radius * 2)
 
         self.pos = Vec(pos_x, pos_y)
         self.vel = Vec(0, 0)
@@ -44,10 +44,9 @@ class MassPoint(sprite.Sprite):
 
     def update(self):
         self.text = self.font.render(str(self.mass), True, (255, 255, 255))
-        self.rect = self.text.get_rect()
         self.rect.center = (self.pos.x, self.pos.y)
 
-    def move(self, left_key, right_key):
+    def move(self, platforms, left_key, right_key):
         self.acc = Vec(0, g)
 
         pressed_keys = key.get_pressed()
@@ -69,9 +68,29 @@ class MassPoint(sprite.Sprite):
             # self.pos.x = WIDTH - 1
             self.pos.x = 0
             self.vel.x *= -1
+
+        for platform in platforms:
+            if platform.rect.left <= self.pos.x <= platform.rect.right:
+                if platform.rect.top <= self.bottom <= platform.rect.centery:
+                # on = self.ison(platforms)
+                # if on is not None:
+                    self.pos.y = platform.rect.top - self.radius + 1
+                    self.vel.y = 0
+                elif platform.rect.bottom >= self.top >= platform.rect.centery:
+                    self.pos.y = platform.rect.bottom + self.radius - 1
+                    self.vel.y *= -1
+            elif platform.rect.top <= self.pos.y <= platform.rect.bottom:
+                if platform.rect.right >= self.pos.x >= platform.rect.centerx:
+                    # self.pos.x = platform.rect.right + 1
+                    self.vel.x *= -1
+                if platform.rect.left <= self.pos.x <= platform.rect.centerx:
+                    # self.pos.x = platform.rect.left - 1
+                    self.vel.x *= -1
+
         if self.pos.y > HEIGHT - PLATFORM_HEIGHT - self.radius:
             self.pos.y = HEIGHT - PLATFORM_HEIGHT - self.radius + 1
             self.vel.y = 0
+
         if self.pos.y < 0:
             self.pos.y = 0
             self.vel.y *= -1
@@ -79,11 +98,19 @@ class MassPoint(sprite.Sprite):
     def ishit(self, other, margin=0):
         return self.pos.dist(other.pos) < (self.radius + other.radius) + margin
 
-    def ison(self, platform):
-        return self.pos.y >= HEIGHT - platform.surf.get_height() - self.radius
+    def ison(self, platforms):
+        for platform in platforms:
+            # if self.pos.y >= HEIGHT - platform.surf.get_height() - self.radius:
+            if platform.rect.left <= self.pos.x <= platform.rect.right:
+                if platform.rect.top <= self.bottom <= platform.rect.centery:
+                    # return True
+                    return platform
+        # return self.pos.y >= HEIGHT - platform.surf.get_height() - self.radius
+        # return False
+        return None
 
-    def jump(self, platform, dots):
-        if self.ison(platform):
+    def jump(self, platforms, dots):
+        if self.ison(platforms) is not None:
             self.vel.y -= 15
             return
 
@@ -131,6 +158,21 @@ class MassPoint(sprite.Sprite):
                 self.pos.y += adjust_y // 2 + 1
                 other.pos.y -= adjust_y // 2 + 1
 
+    @property
+    def bottom(self):
+        return self.pos.y + self.radius
+
+    @property
+    def top(self):
+        return self.pos.y - self.radius
+
+    @property
+    def left(self):
+        return self.pos.x - self.radius
+
+    @property
+    def right(self):
+        return self.pos.x + self.radius
 
 class Platform(sprite.Sprite):
     def __init__(self, width=WIDTH, center=(WIDTH / 2, HEIGHT - PLATFORM_HEIGHT/2)):

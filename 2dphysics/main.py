@@ -18,29 +18,26 @@ fps = 60
 # x, y = 100, 500
 # v_x, v_y = 0, 0
 # g = 1.0
-count = 200
+count = 50
 show = 0
 floor = Platform()
-pt1 = Platform(width=200, center=(300, 550))
+pt1 = Platform(width=200, center=(300, 400))
+pt2 = Platform(width=200, center=(700, 300))
 dots = sprite.Group()
 platforms = sprite.Group()
-platforms.add(floor, pt1)
+platforms.add(floor, pt1, pt2)
 dotss = []
 
-dot1 = MassPoint((255, 0, 0), 30, WIDTH//2, 100)
-dot2 = MassPoint((0, 255, 0), 30, WIDTH//2, 200)
 for i in range(count):
-    mass = randint(1, 51)
-    massidx = 0.25 + (0.5 - (mass - 1) / 100) * 1.5
+    mass = randint(1, 101)
+    massidx = max(0.1, 1 - (mass - 1) / 100)
     coloridx = random()
-    s = uniform(0.4, 0.6)
+    s = uniform(0.4, 0.8)
     color = tuple(map(lambda c: round(c * 255), hsv_to_rgb(coloridx, s, massidx)))
     dot = MassPoint(color, mass, (i + 1) * WIDTH // (count + 1), HEIGHT - 100 - 30 * i)
     dotss.append(dot)
 
 dots.add(*dotss)
-dotss.append(dot1)
-dotss.append(dot2)
 all_sprites = sprite.Group()
 all_sprites.add(platforms)
 mouse_pressed = False
@@ -57,11 +54,7 @@ while True:
         elif evt.type == KEYDOWN:
             if evt.key == K_SPACE:
                 for dot in dots:
-                    dot.jump(floor, dotss)
-            if evt.key == K_w:
-                dot1.jump(floor, dotss)
-            if evt.key == K_UP:
-                dot2.jump(floor, dotss)
+                    dot.jump(platforms, dotss)
         elif evt.type == MOUSEBUTTONDOWN:
             mouse_start = mouse.get_pos()
             mouse_pressed = True
@@ -74,7 +67,7 @@ while True:
             mouse_pressed = False
 
     if mouse_start != (-1, -1) and mouse_end != (-1, -1):
-        for dot in dots:
+        for dot in dotss:
             if dot.pos.dist(Vec(mouse_start[0], mouse_start[1])) < dot.radius * 3:
                 dot.vel = (0.3 - log2(dot.mass) / 50) * Vec(mouse_end[0] - mouse_start[0], mouse_end[1] - mouse_start[1])
 
@@ -86,20 +79,11 @@ while True:
     for entity in all_sprites:
         screen.blit(entity.surf, entity.rect)
 
-    dot1.move(left_key=K_a, right_key=K_d)
-    draw.circle(screen, dot1.color, (dot1.pos.x, dot1.pos.y), dot1.radius)
-    dot1.update()
-    screen.blit(dot1.text, dot1.rect)
-    dot2.move(left_key=K_LEFT, right_key=K_RIGHT)
-    draw.circle(screen, dot2.color, (dot2.pos.x, dot2.pos.y), dot2.radius)
-    dot2.update()
-    screen.blit(dot2.text, dot2.rect)
-
     for dot in dots:
-        dot.move(left_key=K_KP4, right_key=K_KP6)
+        dot.move(platforms, left_key=K_KP4, right_key=K_KP6)
         draw.circle(screen, dot.color, (dot.pos.x, dot.pos.y), dot.radius)
         dot.update()
-        screen.blit(dot.text, dot.rect)
+        screen.blit(dot.text, (dot.pos.x - dot.radius / 2, dot.pos.y - dot.radius / 2))
 
     color_arrow = (show * 51//2, show * 51//2, show * 51//2)
 
