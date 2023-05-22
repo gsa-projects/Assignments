@@ -24,20 +24,20 @@ PT1 = Platform()
 dots = sprite.Group()
 dotss = []
 
+dot1 = MassPoint((255, 0, 0), 30, WIDTH//2, 100)
+dot2 = MassPoint((0, 255, 0), 30, WIDTH//2, 200)
 for i in range(count):
     mass = randint(1, 51)
-    massidx = 1 - (mass - 1) / 50
-    coloridx = randrange(0, 1)
-    s = randrange(0, 1)
+    massidx = 0.25 + (0.5 - (mass - 1) / 100) * 1.5
+    coloridx = random()
+    s = uniform(0.4, 0.6)
     color = tuple(map(lambda c: round(c * 255), hsv_to_rgb(coloridx, s, massidx)))
-    print(color)
-    dot = MassPoint(color, mass, (i + 1) * WIDTH / (count + 1), HEIGHT - 100 - 10 * i)
+    dot = MassPoint(color, mass, (i + 1) * WIDTH // (count + 1), HEIGHT - 100 - 30 * i)
     dotss.append(dot)
-# dot1 = MassPoint((0, 0, 255), m2, WIDTH / 2, HEIGHT - 100)
-# dot2 = MassPoint((255, 0, 0), m1, WIDTH / 2, HEIGHT - 200)
-# dot3 = MassPoint((255, 0, 255), m3, WIDTH / 2, HEIGHT - 300)
 
 dots.add(*dotss)
+dotss.append(dot1)
+dotss.append(dot2)
 all_sprites = sprite.Group()
 all_sprites.add(PT1)
 mouse_pressed = False
@@ -54,11 +54,11 @@ while True:
         elif evt.type == KEYDOWN:
             if evt.key == K_SPACE:
                 for dot in dots:
-                    dot.jump(PT1)
-        #     if evt.key == K_UP:
-        #         dot2.jump(PT1)
-        #     if evt.key == K_KP8:
-        #         dot3.jump(PT1)
+                    dot.jump(PT1, dotss)
+            if evt.key == K_w:
+                dot1.jump(PT1, dotss)
+            if evt.key == K_UP:
+                dot2.jump(PT1, dotss)
         elif evt.type == MOUSEBUTTONDOWN:
             mouse_start = mouse.get_pos()
             mouse_pressed = True
@@ -73,7 +73,7 @@ while True:
     if mouse_start != (-1, -1) and mouse_end != (-1, -1):
         for dot in dots:
             if dot.pos.dist(Vec(mouse_start[0], mouse_start[1])) < dot.radius * 3:
-                dot.vel = 0.3 * Vec(mouse_end[0] - mouse_start[0], mouse_end[1] - mouse_start[1])
+                dot.vel = (0.3 - log2(dot.mass) / 50) * Vec(mouse_end[0] - mouse_start[0], mouse_end[1] - mouse_start[1])
 
         mouse_start = (-1, -1)
         mouse_end = (-1, -1)
@@ -83,15 +83,20 @@ while True:
     for entity in all_sprites:
         screen.blit(entity.surf, entity.rect)
 
+    dot1.move(left_key=K_a, right_key=K_d)
+    draw.circle(screen, dot1.color, (dot1.pos.x, dot1.pos.y), dot1.radius)
+    dot1.update()
+    screen.blit(dot1.text, dot1.rect)
+    dot2.move(left_key=K_LEFT, right_key=K_RIGHT)
+    draw.circle(screen, dot2.color, (dot2.pos.x, dot2.pos.y), dot2.radius)
+    dot2.update()
+    screen.blit(dot2.text, dot2.rect)
+
     for dot in dots:
-        dot.move(left_key=K_a, right_key=K_d)
+        dot.move(left_key=K_KP4, right_key=K_KP6)
         draw.circle(screen, dot.color, (dot.pos.x, dot.pos.y), dot.radius)
         dot.update()
         screen.blit(dot.text, dot.rect)
-
-    # dot1.move(left_key=K_a, right_key=K_d)
-    # dot2.move(left_key=K_LEFT, right_key=K_RIGHT)
-    # dot3.move(left_key=K_KP4, right_key=K_KP6)
 
     color_arrow = (show * 51//2, show * 51//2, show * 51//2)
 

@@ -8,7 +8,7 @@ WIDTH = 1200
 ASSETS = path.join(path.dirname(__file__), "assets")
 a = 0.5
 g = 0.6
-f = -0.06
+f = -0.12
 e = 1
 PLATFORM_HEIGHT = 40
 
@@ -38,6 +38,9 @@ class MassPoint(sprite.Sprite):
         self.acc = Vec(0, 0)
 
         self.rect.center = (self.pos.x, self.pos.y)
+
+    def same(self, other):
+        return self.mass == other.mass and self.pos == other.pos and self.vel == other.vel and self.acc == other.acc and self.color == other.color and self.radius == other.radius
 
     def update(self):
         self.text = self.font.render(str(self.mass), True, (255, 255, 255))
@@ -73,15 +76,21 @@ class MassPoint(sprite.Sprite):
             self.pos.y = 0
             self.vel.y *= -1
 
-    def ishit(self, other):
-        return self.pos.dist(other.pos) < (self.radius + other.radius)
+    def ishit(self, other, margin=0):
+        return self.pos.dist(other.pos) < (self.radius + other.radius) + margin
 
     def ison(self, platform):
         return self.pos.y >= HEIGHT - platform.surf.get_height() - self.radius
 
-    def jump(self, platform):
+    def jump(self, platform, dots):
         if self.ison(platform):
             self.vel.y -= 15
+            return
+
+        for dot in dots:
+            if not self.same(dot) and self.ishit(dot, margin=2):
+                self.vel.y -= 15
+                return
             
     def collision(self, other):
         if self.ishit(other):
@@ -96,6 +105,32 @@ class MassPoint(sprite.Sprite):
             factor = sqrt(energy_before / energy_after)
             self.vel *= factor
             other.vel *= factor
+
+            collision_vector = self.pos - other.pos
+            dist = self.pos.dist(other.pos)
+            overlap = (self.radius + other.radius) - dist
+
+            if dist != 0:
+                adjust_x = (overlap * collision_vector.x) / dist
+                adjust_y = (overlap * collision_vector.y) / dist
+            else:
+                adjust_x = overlap
+                adjust_y = 0
+
+            if self.pos.x < other.pos.x:
+                self.pos.x -= adjust_x // 2 + 1
+                other.pos.x += adjust_x // 2 + 1
+            else:
+                self.pos.x += adjust_x // 2 + 1
+                other.pos.x -= adjust_x // 2 + 1
+
+            if self.pos.y < other.pos.y:
+                self.pos.y -= adjust_y // 2 + 1
+                other.pos.y += adjust_y // 2 + 1
+            else:
+                self.pos.y += adjust_y // 2 + 1
+                other.pos.y -= adjust_y // 2 + 1
+
 
 class Platform(sprite.Sprite):
     def __init__(self):
