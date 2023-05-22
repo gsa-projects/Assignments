@@ -133,11 +133,11 @@ class MassPoint(sprite.Sprite):
 
 
 class Platform(sprite.Sprite):
-    def __init__(self):
+    def __init__(self, width=WIDTH, center=(WIDTH / 2, HEIGHT - PLATFORM_HEIGHT/2)):
         super().__init__()
-        self.surf = Surface((WIDTH, PLATFORM_HEIGHT))
+        self.surf = Surface((width, PLATFORM_HEIGHT))
         self.surf.fill((50, 50, 50))
-        self.rect = self.surf.get_rect(center=(WIDTH / 2, HEIGHT - PLATFORM_HEIGHT/2))
+        self.rect = self.surf.get_rect(center=center)
 
 @dataclass
 class Vec:

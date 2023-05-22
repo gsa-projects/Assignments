@@ -20,8 +20,11 @@ fps = 60
 # g = 1.0
 count = 200
 show = 0
-PT1 = Platform()
+floor = Platform()
+pt1 = Platform(width=200, center=(300, 550))
 dots = sprite.Group()
+platforms = sprite.Group()
+platforms.add(floor, pt1)
 dotss = []
 
 dot1 = MassPoint((255, 0, 0), 30, WIDTH//2, 100)
@@ -39,7 +42,7 @@ dots.add(*dotss)
 dotss.append(dot1)
 dotss.append(dot2)
 all_sprites = sprite.Group()
-all_sprites.add(PT1)
+all_sprites.add(platforms)
 mouse_pressed = False
 mouse_start = (-1, -1)
 mouse_end = (-1, -1)
@@ -54,11 +57,11 @@ while True:
         elif evt.type == KEYDOWN:
             if evt.key == K_SPACE:
                 for dot in dots:
-                    dot.jump(PT1, dotss)
+                    dot.jump(floor, dotss)
             if evt.key == K_w:
-                dot1.jump(PT1, dotss)
+                dot1.jump(floor, dotss)
             if evt.key == K_UP:
-                dot2.jump(PT1, dotss)
+                dot2.jump(floor, dotss)
         elif evt.type == MOUSEBUTTONDOWN:
             mouse_start = mouse.get_pos()
             mouse_pressed = True
