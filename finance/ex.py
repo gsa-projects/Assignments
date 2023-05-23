@@ -1,24 +1,17 @@
+import pandas as pd
+import matplotlib.pyplot as plt
 import requests
-from bs4 import BeautifulSoup
+from datetime import datetime
+from matplotlib import dates as mdates
+from bs4 import BeautifulSoup as bs
 
-def get_stock_info(stock_code):
-    url = f'https://finance.naver.com/item/main.nhn?code={stock_code}'
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, 'html.parser')
+url = 'https://finance.naver.com/item/sise_day.nhn?code=068270&page=1'
+headers = {'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.96 Safari/537.36'}
+response = requests.get(url, headers=headers)
 
-    # 종목명 가져오기
-    stock_name = soup.select_one('div.wrap_company h2 a').text
+html = bs(response.text, 'html.parser')
+html_table = html.select("table")
+table = pd.read_html(str(html_table))
+print('파싱된 테이블의 개수 :', len(table))
 
-    # 현재가 가져오기
-    current_price = soup.select_one('p.no_today span.blind').text
-
-    # 전일대비 가져오기
-    change_price = soup.select_one('p.no_exday em em').text
-
-    # 출력
-    print(f'종목명: {stock_name}')
-    print(f'현재가: {current_price}')
-    print(f'전일대비: {change_price}')
-
-# 예시로 삼성전자(005930)의 정보를 가져옴
-get_stock_info('005930')
+print(table[0])
