@@ -28,4 +28,11 @@ df = df.dropna()
 df = df.iloc[0:30] 
 df = df.sort_values(by='날짜')
 
-print(df)
+plt.figure(figsize=(15, 5))
+plt.title('Celltrion (close)')
+plt.xticks(rotation=45)
+plt.plot(df['날짜'], df['종가'], 'co-')
+plt.grid(color='gray', linestyle='--')
+plt.show()
+
+plt.savefig('savefig_default.png')

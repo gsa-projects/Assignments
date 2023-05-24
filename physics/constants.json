@@ -1,0 +1,14 @@
+{
+  "width": 700,
+  "height": 500,
+
+  "fps": 1000,
+  "background_color": [0, 0, 0],
+
+  "margin": 1,
+
+  "gravity": 0.0004,
+  "acceleration": 0.0006,
+  "friction": 0,
+  "jump": 0.3
+}

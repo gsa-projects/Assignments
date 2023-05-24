@@ -47,7 +47,7 @@ while True:
         screen.blit(platform.surf, platform.rect)
 
     for circle in circles:
-        circle.update(platforms)
+        circle.move(platforms)
         draw.circle(screen, circle.color, change_axis(circle.s), circle.radius)
         # platform.draw(screen)
 

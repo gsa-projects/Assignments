@@ -100,7 +100,7 @@ class Circle(Object):
 
         self.rect = Rect(*change_axis(self.s), 2 * self.radius, 2 * self.radius)
 
-    def update(self, platforms, left_key=K_LEFT, right_key=K_RIGHT):
+    def move(self, platforms, left_key=K_LEFT, right_key=K_RIGHT):
         self.a = Vector(0, -g)
 
         # for platform in platforms:

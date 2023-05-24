@@ -98,7 +98,6 @@ while True:
         yet_end = (-1, -1)
 
     for i in range(len(dotss)):
-        print(dotss[i].pos, dotss[i].vel, dotss[i].acc)
         for j in range(i + 1, len(dotss)):
             dotss[i].collision(dotss[j])
 
