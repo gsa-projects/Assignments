@@ -5,9 +5,10 @@
   "fps": 1000,
   "background_color": [0, 0, 0],
 
-  "margin": 1,
+  "margin": 2,
 
   "gravity": 0.0004,
+  "cor": 0.8,
   "acceleration": 0.0006,
   "friction": 0,
   "jump": 0.3

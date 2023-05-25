@@ -7,6 +7,7 @@ with open("constants.json") as file:
     constants = json.load(file)
 
 g = constants['gravity']
+e = constants['cor']
 π = pi
 
 def change_axis(x, y=None):
@@ -24,8 +25,15 @@ class Vector:
     y: int | float
 
     def __post_init__(self):
-        self.x = round(self.x, 5)
-        self.y = round(self.y, 5)
+        pass
+
+        def make_zero(x, tol=1e-4):
+            if abs(x) < tol:
+                return 0
+            return x
+
+        self.x = round(make_zero(self.x), 5)
+        self.y = round(make_zero(self.y), 5)
 
     def __str__(self):
         return f"({self.x}, {self.y})"
@@ -53,10 +61,7 @@ class Vector:
             return Vector(self.x * k, self.y * k)
 
     def __rmul__(self, k: int | float):
-        if isinstance(k, Vector):
-            return self.x * k.x + self.y * k.y
-        elif isinstance(k, int) or isinstance(k, float):
-            return Vector(self.x * k, self.y * k)
+        return self * k
 
     def __truediv__(self, k: int | float):
         return Vector(self.x / k, self.y / k)
@@ -90,6 +95,10 @@ class Platform(game.sprite.Sprite):
 
     def __repr__(self):
         return str(self)
+
+    @staticmethod
+    def init(start: tuple[int, int], right, up=0, thickness=max(1, constants['margin'] * 2), color=(255, 255, 255), friction=0):
+        return Platform(start, (start[0] + right, start[1] + up), thickness, color, friction)
 
     @property
     def left(self):
@@ -163,12 +172,16 @@ class Ball(game.sprite.Sprite):
         for platform in platforms:
             if platform.left <= self.pos.x <= platform.right:
                 plat = platform.thickness / 2
-                if 1 + plat >= platform.dist(self) - self.radius >= plat:
-                    self.canjump = True
-                    return platform, 'top'
-                elif 1 + plat >= platform.dist(self) + self.radius >= plat:
-                    self.canjump = False
-                    return platform, 'bottom'
+                dist = platform.dist(self)
+
+                if dist >= 0:
+                    if 0.5 + plat >= dist - self.radius >= plat:
+                        self.canjump = True
+                        return platform, 'top'
+                else:
+                    if 0.5 + plat >= -dist - self.radius >= plat:
+                        self.canjump = False
+                        return platform, 'bottom'
 
         self.canjump = False
         return None
@@ -209,14 +222,15 @@ class Ball(game.sprite.Sprite):
             platform, status = on
 
             if status == 'top':
+                if platform.left == 400:
+                    print(f'v={self.vel}, a={self.acc}')
+
                 θ = platform.angle
                 N = Vector(g*cos(θ)*cos(θ + π/2), g*cos(θ)*sin(θ + π/2))
-                # print(θ, platform.slope, N)
-                # self.pos.y = platform.top(self.pos.x) + self.radius + platform.thickness / 2 + 1
-                self.vel.y = 0
+                a, b = self.vel
+                self.vel.x = a*cos(θ)**2 + b*sin(θ)*cos(θ) - e*(a*sin(θ)**2 + b*sin(θ)*cos(θ))
+                self.vel.y = a*sin(θ)*cos(θ) + b*sin(θ)**2 - e*(a*sin(θ)*cos(θ) + b*cos(θ)**2)
                 self.acc = N + Vector(0, -g)
-                # print(N, self.acc)
-                # self.vel.y = max(0, self.vel.y)
             elif status == 'bottom':
                 self.pos.y = platform.bottom(self.pos.x) - self.radius - platform.thickness / 2
                 self.vel.y *= -1
@@ -233,15 +247,16 @@ class Ball(game.sprite.Sprite):
         self.pos += self.vel + 0.5 * self.acc
 
     def jump(self, platforms, pressed_key, jump_key=game.K_SPACE):
-        if pressed_key == jump_key:
-            on = self.on_platform(platforms)
-            print(self, on)
-            if on is not None:
-                θ = on[0].angle + π / 2
-                add = constants['jump'] * Vector(cos(θ), sin(θ))
-                print(degrees(θ), add)
-
-                self.vel += add
+        pass
+        # if pressed_key == jump_key:
+        #     on = self.on_platform(platforms)
+        #     print(self, on)
+        #     if on is not None:
+        #         θ = on[0].angle + π / 2
+        #         add = constants['jump'] * Vector(cos(θ), sin(θ))
+        #         print(degrees(θ), add)
+        #
+        #         self.vel += add
 
     def draw(self, screen):
         game.draw.circle(screen, self.color, change_axis(self.pos), self.radius)
