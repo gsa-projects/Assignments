@@ -1,9 +1,11 @@
 import pygame as game
+from os import path
+import os
 import json
 from math import *
 from dataclasses import dataclass
 
-with open("constants.json") as file:
+with open('physics/3트/constants.json') as file:
     constants = json.load(file)
 
 g = constants['gravity']

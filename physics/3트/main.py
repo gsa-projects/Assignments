@@ -1,9 +1,11 @@
 import pygame as game
+from os import path
+import os
 import json
 from basic import *
 
 constants = {}
-with open("constants.json") as file:
+with open('physics/3트/constants.json') as file:
     constants = json.load(file)
 
 game.init()
